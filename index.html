@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!--Firebase Libs-->
+        <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-database.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-storage.js"></script> 
+
+        <script>
+            // Your web app's Firebase configuration
+            var firebaseConfig = {
+                apiKey: "AIzaSyAGEz3OeWFD5jr4xgYF9TzwaMItJzv9vBg",
+                authDomain: "family-plus-f25c0.firebaseapp.com",
+                databaseURL: "https://family-plus-f25c0.firebaseio.com",
+                projectId: "family-plus-f25c0",
+                storageBucket: "family-plus-f25c0.appspot.com",
+                messagingSenderId: "682166671775",
+                appId: "1:682166671775:web:76ccec7ce47cfce66685aa"
+            };
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+        </script>
+        <style> img{width:300px; height:300px;}</style>
+    </head>
+    <body>
+        <h2>Images in Firebase</h2>
+        <h4>Your image name</h4>
+        <input type="text" id="image-name" placeholder="your image name.."><br><br>
+        <img id="image-preview" aria-placeholder="your image will be displayed here"> <label id="upProg"></label><br><br>
+        <button id="select">select</button>
+        <button id="upload">upload</button>
+        <button id="retrieve">retrieve</button>
+
+        <script id="mainscript">
+            var ImgName, ImgUrl;
+            var files=[];
+            var reader;
+
+            document.getElementById("select").onclick = function(e) {
+                var input = document.createElement("input");
+                input.type="file";
+
+                input.onchange = e => {
+                    files = e.target.files;
+                    reader = new FileReader;
+                    reader.onload = function(){
+                        document.getElementById("image-preview").src= reader.result;
+                    }
+                    reader.readAsDataURL(files[0]);
+                }
+                input.click();
+            }
+
+            document.getElementById('upload').onclick = function() {
+                ImgName = document.getElementById('image-name').value;
+                var uploadTask = firebase.storage().ref('Images/'+ImgName+'.png').put(files[0]);
+
+                uploadTask.on('state_changed', 
+                    function(snapshot){
+                        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById("upProg").innerHTML = 'Upload '+progress+"%";
+                    },
+                    function(err){
+                        alert(err);
+                    },
+                    function(){
+                        uploadTask.snapshot.ref.getDownloadURL().then(function(url){
+                            ImgUrl = url;
+
+                            firebase.database().ref("Pics/"+ImgName).set({
+                                Name: ImgName,
+                                Link: ImgUrl
+                            });
+
+                            alert("Image added successfully");
+                        });
+                    }
+                );
+            }
+            document.getElementById("retrieve").onclick = function(){
+                console.log('wa');
+                ImgName = document.getElementById('image-name').value;
+                firebase.database().ref('Pics/'+ImgName).on('value', function(snapshot){
+                    document.getElementById('image-preview').src = snapshot.val().Link;
+                });
+            };
+        </script>
+    </body>
+</html>
